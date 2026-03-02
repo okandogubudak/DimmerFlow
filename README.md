@@ -9,6 +9,27 @@
 ![macOS 13+](https://img.shields.io/badge/macOS-13%2B-blue?logo=apple)
 ![Swift 6](https://img.shields.io/badge/Swift-6-orange?logo=swift)
 ![License](https://img.shields.io/badge/License-MIT-green)
+[![Build](https://github.com/okandogubudak/DimmerFlow/actions/workflows/build.yml/badge.svg)](https://github.com/okandogubudak/DimmerFlow/actions/workflows/build.yml)
+
+</div>
+
+---
+
+## Screenshots
+
+<div align="center">
+<img src="assets/screenshots/screenshot-01.png" width="420" alt="DimmerFlow Menu Bar">
+&nbsp;&nbsp;
+<img src="assets/screenshots/screenshot-02.png" width="420" alt="DimmerFlow Settings">
+</div>
+
+### Demo
+
+<div align="center">
+
+https://github.com/user-attachments/assets/demo.mov
+
+> *See how DimmerFlow smoothly dims background windows as you switch focus.*
 
 </div>
 

@@ -13,14 +13,11 @@ public final class OverlayCoordinator {
     private var activeWindowID: CGWindowID?
     private var activeBundleID: String?
     private var activeIsFullscreen: Bool = false
-    private var activeWindowFrame: CGRect?
     private var previousBundleID: String?
     private var isIdle: Bool = false
     private var isPomodoroBreak: Bool = false
     private var isOnBattery: Bool = false
-    private var settingsWorkItem: DispatchWorkItem?
-    private var scheduleTimer: Timer?
-    private var batteryTimer: Timer?
+    private var periodicTimer: Timer?
 
     public init(settings: AppSettings) {
         self.settings = settings
@@ -41,11 +38,11 @@ public final class OverlayCoordinator {
         )
 
         settings.objectWillChange
-            .sink { [weak self] _ in self?.debouncedApply() }
+            .throttle(for: .milliseconds(32), scheduler: DispatchQueue.main, latest: true)
+            .sink { [weak self] _ in self?.applyCurrentState() }
             .store(in: &cancellables)
 
-        startScheduleTimer()
-        startBatteryMonitor()
+        startPeriodicTimer()
     }
 
     deinit {
@@ -63,7 +60,6 @@ public final class OverlayCoordinator {
         activeWindowID = context.focusedWindowID
         activeBundleID = context.bundleID
         activeIsFullscreen = context.isFullscreen
-        activeWindowFrame = context.windowFrame
         applyCurrentState()
     }
 
@@ -80,7 +76,6 @@ public final class OverlayCoordinator {
             // No previous app — go to deactivated (fully dimmed) state
             activeWindowID = nil
             activeBundleID = nil
-            activeWindowFrame = nil
             applyCurrentState()
         }
     }
@@ -99,13 +94,6 @@ public final class OverlayCoordinator {
 
     @objc private func rebuildWindowsNotification() { rebuildWindows() }
     @objc private func appearanceDidChange() { applyCurrentState() }
-
-    private func debouncedApply() {
-        settingsWorkItem?.cancel()
-        let item = DispatchWorkItem { [weak self] in self?.applyCurrentState() }
-        settingsWorkItem = item
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.016, execute: item)
-    }
 
     private func rebuildWindows() {
         windows.values.forEach { $0.orderOut(nil) }
@@ -216,20 +204,15 @@ public final class OverlayCoordinator {
         }
     }
 
-    // MARK: - Schedule Timer
+    // MARK: - Periodic Timer (Schedule + Battery)
 
-    private func startScheduleTimer() {
-        scheduleTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.applyCurrentState() }
-        }
-    }
-
-    // MARK: - Battery Monitor
-
-    private func startBatteryMonitor() {
+    private func startPeriodicTimer() {
         checkBatteryState()
-        batteryTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.checkBatteryState() }
+        periodicTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.checkBatteryState()
+                self?.applyCurrentState()
+            }
         }
     }
 

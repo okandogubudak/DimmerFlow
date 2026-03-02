@@ -2,11 +2,12 @@ import AppKit
 import FocusCore
 
 final class OverlayWindow: NSWindow {
-    private let effectView = NSVisualEffectView()
+    private var effectView: NSVisualEffectView?
     private let dimView = NSView()
     private var lastDimAmount: CGFloat = -1
     private var lastBlurAmount: CGFloat = -1
     private var lastFrame: NSRect = .zero
+    private var lastTintCGColor: CGColor?
 
     init(screen: NSScreen) {
         super.init(
@@ -28,21 +29,12 @@ final class OverlayWindow: NSWindow {
         let container = NSView(frame: screen.frame)
         container.wantsLayer = true
 
-        effectView.frame = container.bounds
-        effectView.autoresizingMask = [.width, .height]
-        effectView.wantsLayer = true
-        effectView.material = .hudWindow
-        effectView.blendingMode = .behindWindow
-        effectView.state = .active
-        effectView.alphaValue = 0
-
         dimView.frame = container.bounds
         dimView.autoresizingMask = [.width, .height]
         dimView.wantsLayer = true
         dimView.layer?.backgroundColor = NSColor.black.cgColor
         dimView.alphaValue = 0
 
-        container.addSubview(effectView)
         container.addSubview(dimView)
         contentView = container
     }
@@ -54,19 +46,24 @@ final class OverlayWindow: NSWindow {
         setFrame(frame, display: false)
         let bounds = NSRect(origin: .zero, size: frame.size)
         contentView?.frame = bounds
-        effectView.frame = bounds
+        effectView?.frame = bounds
         dimView.frame = bounds
     }
 
     func setBlurEnabled(_ enabled: Bool) {
-        effectView.isHidden = !enabled
+        if enabled {
+            ensureEffectView()
+        }
+        effectView?.isHidden = !enabled
     }
 
     func setBlurAmount(_ value: CGFloat, duration: Double, curve: AnimationCurve = .easeOut) {
         let v = max(0, min(1, value))
         guard abs(lastBlurAmount - v) > 0.002 else { return }
         lastBlurAmount = v
-        animate(duration: duration, curve: curve) { self.effectView.animator().alphaValue = v }
+        if v > 0 { ensureEffectView() }
+        guard let effectView else { return }
+        animate(duration: duration, curve: curve) { effectView.animator().alphaValue = v }
     }
 
     func setDimAmount(_ value: CGFloat, duration: Double, curve: AnimationCurve = .easeOut) {
@@ -82,13 +79,29 @@ final class OverlayWindow: NSWindow {
     }
 
     func setAppearanceColor(tintColor: NSColor, darkMode: Bool) {
-        // True black: use NSColor.black directly (no gray offset)
+        let newCGColor: CGColor
         if let c = tintColor.usingColorSpace(.sRGB),
            c.redComponent < 0.02, c.greenComponent < 0.02, c.blueComponent < 0.02 {
-            dimView.layer?.backgroundColor = NSColor.black.cgColor
+            newCGColor = NSColor.black.cgColor
         } else {
-            dimView.layer?.backgroundColor = tintColor.cgColor
+            newCGColor = tintColor.cgColor
         }
+        guard lastTintCGColor == nil || newCGColor != lastTintCGColor! else { return }
+        lastTintCGColor = newCGColor
+        dimView.layer?.backgroundColor = newCGColor
+    }
+
+    private func ensureEffectView() {
+        guard effectView == nil, let container = contentView else { return }
+        let ev = NSVisualEffectView(frame: container.bounds)
+        ev.autoresizingMask = [.width, .height]
+        ev.wantsLayer = true
+        ev.material = .hudWindow
+        ev.blendingMode = .behindWindow
+        ev.state = .active
+        ev.alphaValue = 0
+        container.addSubview(ev, positioned: .below, relativeTo: dimView)
+        effectView = ev
     }
 
     private func animate(duration: Double, curve: AnimationCurve = .easeOut, changes: @escaping () -> Void) {
