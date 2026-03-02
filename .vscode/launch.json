@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:DimmerFlow}",
+            "name": "Debug DimmerFlow",
+            "target": "DimmerFlow",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug DimmerFlow"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:DimmerFlow}",
+            "name": "Release DimmerFlow",
+            "target": "DimmerFlow",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release DimmerFlow"
+        }
+    ]
+}
