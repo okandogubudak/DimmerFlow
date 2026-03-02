@@ -26,8 +26,7 @@
 ### Demo
 
 <div align="center">
-
-https://github.com/okandogubudak/DimmerFlow/releases/download/v1.0/demo.mov
+<img src="assets/screenshots/demo.gif" width="600" alt="DimmerFlow Demo">
 
 > *See how DimmerFlow smoothly dims background windows as you switch focus.*
 
