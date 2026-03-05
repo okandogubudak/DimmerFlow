@@ -101,16 +101,21 @@ final class PomodoroMenuBarTimerController {
         createdPanel.isReleasedWhenClosed = false
         createdPanel.isOpaque = false
         createdPanel.backgroundColor = .clear
-        createdPanel.hasShadow = true
+        createdPanel.hasShadow = false
         createdPanel.level = .statusBar
         createdPanel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-        let glassView = NSVisualEffectView(frame: NSRect(origin: .zero, size: size))
-        glassView.material = .hudWindow
-        glassView.blendingMode = .withinWindow
+
+        let containerView = NSView(frame: NSRect(origin: .zero, size: size))
+        containerView.wantsLayer = true
+        containerView.layer?.cornerRadius = 12
+        containerView.layer?.masksToBounds = true
+        containerView.layer?.backgroundColor = NSColor.clear.cgColor
+
+        let glassView = NSVisualEffectView(frame: containerView.bounds)
+        glassView.autoresizingMask = [.width, .height]
+        glassView.material = .menu
+        glassView.blendingMode = .behindWindow
         glassView.state = .active
-        glassView.wantsLayer = true
-        glassView.layer?.cornerRadius = 12
-        glassView.layer?.masksToBounds = true
 
         hosting.view.translatesAutoresizingMaskIntoConstraints = false
         hosting.view.wantsLayer = true
@@ -123,7 +128,8 @@ final class PomodoroMenuBarTimerController {
             hosting.view.bottomAnchor.constraint(equalTo: glassView.bottomAnchor)
         ])
 
-        createdPanel.contentView = glassView
+        containerView.addSubview(glassView)
+        createdPanel.contentView = containerView
         createdPanel.alphaValue = 0
         createdPanel.orderOut(nil)
 
