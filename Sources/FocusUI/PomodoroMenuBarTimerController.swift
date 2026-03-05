@@ -35,8 +35,13 @@ final class PomodoroMenuBarTimerController {
     }
 
     func setPomodoroTimer(_ timer: PomodoroTimer?) {
+        let previousTimer = pomodoroTimer
         pomodoroTimer = timer
         timerCancellables.removeAll()
+
+        if panel != nil, previousTimer !== timer {
+            closePanel()
+        }
 
         timer?.$remainingSeconds
             .sink { [weak self] _ in
@@ -76,13 +81,13 @@ final class PomodoroMenuBarTimerController {
 
         let content = PomodoroMenuBarTimerView(
             timer: timer,
-            onStart: { [weak self] in
-                guard let self, let timer = self.pomodoroTimer else { return }
+            onStart: { [weak self, timer] in
+                guard let self else { return }
                 timer.startFocus()
                 self.forceReveal()
             },
-            onStop: { [weak self] in
-                guard let self, let timer = self.pomodoroTimer else { return }
+            onStop: { [weak self, timer] in
+                guard let self else { return }
                 timer.stop()
                 self.forceReveal()
             }

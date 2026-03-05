@@ -8,7 +8,6 @@ public final class StatusBarController: NSObject {
     private let settings: AppSettings
     private let statusItem: NSStatusItem
     private let pomodoroMenuBarTimerController: PomodoroMenuBarTimerController
-    private lazy var fallbackPomodoroTimer = PomodoroTimer(settings: settings)
     private var popoverPanel: NSPanel?
     private var preferencesWindow: NSWindow?
     private var eventMonitor: Any?
@@ -104,7 +103,7 @@ public final class StatusBarController: NSObject {
 
         let content = MenuPopoverView(
             settings: settings,
-            pomodoroTimer: pomodoroTimer ?? fallbackPomodoroTimer,
+            pomodoroTimer: resolvedPomodoroTimer(),
             onSettings: { [weak self] in
                 self?.closePopover()
                 self?.openPreferences()
@@ -184,6 +183,15 @@ public final class StatusBarController: NSObject {
         }
         preferencesWindow?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    private func resolvedPomodoroTimer() -> PomodoroTimer {
+        if let existing = pomodoroTimer {
+            return existing
+        }
+        let created = PomodoroTimer(settings: settings)
+        pomodoroTimer = created
+        return created
     }
 
     private func centerWindowOnActiveScreen(_ window: NSWindow) {
