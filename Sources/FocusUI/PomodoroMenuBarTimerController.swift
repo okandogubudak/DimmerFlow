@@ -141,8 +141,9 @@ final class PomodoroMenuBarTimerController {
     private func startHoverPolling() {
         hoverPollingTimer?.invalidate()
         hoverPollingTimer = Timer.scheduledTimer(withTimeInterval: 0.12, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.hoverTick()
+            guard let self else { return }
+            Task { @MainActor [self] in
+                self.hoverTick()
             }
         }
         if let hoverPollingTimer {
@@ -194,8 +195,8 @@ final class PomodoroMenuBarTimerController {
                 panel.animator().alphaValue = 0
             })
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.16) { [weak self, weak panel] in
-                Task { @MainActor in
-                    guard let self, let panel else { return }
+                guard let self, let panel else { return }
+                Task { @MainActor [self, panel] in
                     if !self.isVisible {
                         panel.orderOut(nil)
                     }

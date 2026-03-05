@@ -215,9 +215,10 @@ public final class OverlayCoordinator {
     private func startPeriodicTimer() {
         checkBatteryState()
         periodicTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.checkBatteryState()
-                self?.applyCurrentState()
+            guard let self else { return }
+            Task { @MainActor [self] in
+                self.checkBatteryState()
+                self.applyCurrentState()
             }
         }
     }

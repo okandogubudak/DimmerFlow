@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import FocusSystem
 
+@MainActor
 public struct PermissionOnboardingView: View {
     private let permissionManager: PermissionManager
     private let onRestart: () -> Void
@@ -77,6 +78,7 @@ public struct PermissionOnboardingView: View {
         }
     }
 
+    @MainActor
     private func refresh() {
         missing = permissionManager.missingPermissions()
     }
