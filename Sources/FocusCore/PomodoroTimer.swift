@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Combine
 import UserNotifications
@@ -28,6 +29,25 @@ public final class PomodoroTimer: ObservableObject {
         let m = remainingSeconds / 60
         let s = remainingSeconds % 60
         return String(format: "%02d:%02d", m, s)
+    }
+
+    public var formattedClockTime: String {
+        let sourceSeconds = phase == .idle ? Int(settings.pomodoroFocusMinutes * 60) : remainingSeconds
+        let h = sourceSeconds / 3600
+        let m = (sourceSeconds % 3600) / 60
+        let s = sourceSeconds % 60
+        return String(format: "%02d:%02d:%02d", h, m, s)
+    }
+
+    public var phaseTitle: String {
+        switch phase {
+        case .focus:
+            return "Focus"
+        case .breakTime:
+            return "Break"
+        case .idle:
+            return "Ready"
+        }
     }
 
     public var isRunning: Bool { phase != .idle }
@@ -82,10 +102,8 @@ public final class PomodoroTimer: ObservableObject {
         switch phase {
         case .focus:
             completedSessions += 1
-            // Auto-start break
             startBreak()
         case .breakTime:
-            // Auto-start next focus session
             startFocus()
         case .idle:
             break
@@ -95,6 +113,13 @@ public final class PomodoroTimer: ObservableObject {
     private func sendNotification() {
         let center = UNUserNotificationCenter.current()
         center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        DispatchQueue.main.async {
+            if let sound = NSSound(named: NSSound.Name("Glass")) {
+                sound.play()
+            } else {
+                NSSound.beep()
+            }
+        }
 
         let content = UNMutableNotificationContent()
         content.sound = .default

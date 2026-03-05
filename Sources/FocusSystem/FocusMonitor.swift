@@ -71,8 +71,6 @@ public final class FocusMonitor {
         let displayID = focusedWindow.flatMap { windowQuery.displayID(containing: $0.bounds) }
         let bundleID = app.bundleIdentifier
         let isFullscreen = windowQuery.isWindowFullscreen(for: app.processIdentifier)
-
-        // Detect window close/minimize: we had a window but now there's none
         if focusedWindow == nil && hadFocusedWindow {
             hadFocusedWindow = false
             onFocusLost?()

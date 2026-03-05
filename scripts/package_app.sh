@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 APP_NAME="DimmerFlow"
 APP_DIR="$HOME/Desktop/${APP_NAME}.app"
+LEGACY_SETUP_DIR="$ROOT_DIR/setup"
 CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 RES_DIR="$CONTENTS_DIR/Resources"
@@ -13,6 +14,7 @@ swift build -c release
 
 BIN_SRC="$ROOT_DIR/.build/release/DimmerFlow"
 
+rm -rf "$LEGACY_SETUP_DIR"
 rm -rf "$APP_DIR"
 mkdir -p "$MACOS_DIR" "$RES_DIR"
 
@@ -38,9 +40,9 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>CFBundleIdentifier</key>
     <string>com.dogu.DimmerFlow</string>
     <key>CFBundleVersion</key>
-    <string>1.0</string>
+    <string>1.1</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>1.1</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleDevelopmentRegion</key>
@@ -50,6 +52,8 @@ cat > "$CONTENTS_DIR/Info.plist" <<'PLIST'
     <key>LSUIElement</key>
     <true/>
     <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
+    <key>CFBundleIconName</key>
     <string>AppIcon</string>
 </dict>
 </plist>

@@ -16,6 +16,7 @@ public final class OverlayCoordinator {
     private var previousBundleID: String?
     private var isIdle: Bool = false
     private var isPomodoroBreak: Bool = false
+    private var isPomodoroRunning: Bool = false
     private var isOnBattery: Bool = false
     private var periodicTimer: Timer?
 
@@ -51,7 +52,6 @@ public final class OverlayCoordinator {
     }
 
     public func updateFocus(_ context: FocusContext) {
-        // Track previous app for window close/minimize handling
         if let currentBID = activeBundleID, currentBID != context.bundleID {
             previousBundleID = currentBID
         }
@@ -63,9 +63,7 @@ public final class OverlayCoordinator {
         applyCurrentState()
     }
 
-    /// Called when no focused window is detected (window closed/minimized)
     public func handleNoFocusedWindow() {
-        // Switch to previous app if available
         if let prevBID = previousBundleID,
            let app = NSWorkspace.shared.runningApplications.first(where: {
                $0.bundleIdentifier == prevBID && $0.activationPolicy == .regular && !$0.isTerminated
@@ -73,7 +71,6 @@ public final class OverlayCoordinator {
             app.activate()
             previousBundleID = nil
         } else {
-            // No previous app — go to deactivated (fully dimmed) state
             activeWindowID = nil
             activeBundleID = nil
             applyCurrentState()
@@ -88,6 +85,15 @@ public final class OverlayCoordinator {
 
     public func setPomodoroBreak(_ onBreak: Bool) {
         guard isPomodoroBreak != onBreak else { return }
+        isPomodoroBreak = onBreak
+        applyCurrentState()
+    }
+
+    public func setPomodoroPhase(_ phase: PomodoroPhase) {
+        let running = phase != .idle
+        let onBreak = phase == .breakTime
+        guard isPomodoroRunning != running || isPomodoroBreak != onBreak else { return }
+        isPomodoroRunning = running
         isPomodoroBreak = onBreak
         applyCurrentState()
     }
@@ -108,19 +114,18 @@ public final class OverlayCoordinator {
     }
 
     private func applyCurrentState() {
-        // Schedule check: disable dimming outside schedule window
-        if settings.scheduleEnabled && !settings.isWithinSchedule {
+        if settings.scheduleEnabled && !settings.isWithinSchedule && !isPomodoroRunning {
             windows.values.forEach { $0.orderOut(nil) }
             return
         }
 
         let shouldBypass = activeBundleID.map { settings.excludedBundleIDs.contains($0) } ?? false
 
-        // Search panel exclusion
         let isSearchPanel = settings.searchPanelExclusion &&
             activeBundleID.map { AppSettings.searchPanelBundleIDs.contains($0) } ?? false
 
-        let enabled = settings.isEnabled && !shouldBypass && !isSearchPanel
+        let pomodoroForcesDimming = isPomodoroRunning && !isPomodoroBreak
+        let enabled = (settings.isEnabled || pomodoroForcesDimming) && !shouldBypass && !isSearchPanel
         let darkMode = isDarkMode()
         let dur = settings.fadeDuration
         let tintColor = settings.tintNSColor
@@ -131,7 +136,6 @@ public final class OverlayCoordinator {
             return
         }
 
-        // Pomodoro break: disable dimming during breaks if autoDim is on
         let pomodoroDisableDim = isPomodoroBreak && settings.pomodoroEnabled && settings.pomodoroAutoDim
 
         var effectiveDim: Double
@@ -142,6 +146,10 @@ public final class OverlayCoordinator {
             effectiveDim = 0
             effectiveBlur = 0
             effectiveBlurEnabled = false
+        } else if isPomodoroRunning {
+            effectiveDim = settings.dimAmount
+            effectiveBlur = settings.blurEnabled ? settings.blurAmount : 0
+            effectiveBlurEnabled = settings.blurEnabled
         } else if isIdle && settings.idleDimEnabled {
             effectiveDim = settings.idleDimAmount
             effectiveBlur = settings.blurEnabled ? settings.blurAmount : 0
@@ -156,7 +164,6 @@ public final class OverlayCoordinator {
             effectiveBlurEnabled = settings.blurEnabled
         }
 
-        // Battery-aware mode: reduce dim/blur on battery
         if settings.batteryAwareEnabled && isOnBattery && !pomodoroDisableDim {
             effectiveDim *= settings.batteryDimReduction
             if settings.batteryDisableBlur {
@@ -204,7 +211,6 @@ public final class OverlayCoordinator {
         }
     }
 
-    // MARK: - Periodic Timer (Schedule + Battery)
 
     private func startPeriodicTimer() {
         checkBatteryState()

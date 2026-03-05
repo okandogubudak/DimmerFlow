@@ -84,10 +84,13 @@ final class AppController: NSObject, NSApplicationDelegate {
         monitor.start()
         focusMonitor = monitor
 
-        // Pomodoro Timer
         let pomodoro = PomodoroTimer(settings: settings)
         pomodoro.onPhaseChange = { [weak self] phase in
-            self?.overlayCoordinator?.setPomodoroBreak(phase == .breakTime)
+            guard let self else { return }
+            self.overlayCoordinator?.setPomodoroPhase(phase)
+            if phase == .focus && !self.settings.isEnabled {
+                self.settings.isEnabled = true
+            }
         }
         pomodoroTimer = pomodoro
         statusBarController?.pomodoroTimer = pomodoro
@@ -102,7 +105,6 @@ final class AppController: NSObject, NSApplicationDelegate {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
     }
 
-    // MARK: - Customizable Keyboard Shortcuts
 
     private func registerGlobalHotkeys() {
         if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
@@ -141,7 +143,6 @@ final class AppController: NSObject, NSApplicationDelegate {
             .store(in: &cancellables)
     }
 
-    // MARK: - Idle Monitor
 
     private func startIdleMonitor() {
         idleTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
@@ -172,7 +173,6 @@ final class AppController: NSObject, NSApplicationDelegate {
         return types.map { CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: $0) }.min() ?? 0
     }
 
-    // MARK: - Launch at Login
 
     private func observeLaunchAtLogin() {
         settings.$launchAtLogin
@@ -193,7 +193,6 @@ final class AppController: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - Automation
 
     private func registerAutomationNotifications() {
         let center = DistributedNotificationCenter.default()

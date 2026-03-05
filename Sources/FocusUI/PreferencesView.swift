@@ -5,6 +5,15 @@ public struct PreferencesView: View {
     @ObservedObject private var settings: AppSettings
     @State private var selectedTab: SettingsTab = .general
     @State private var isAppActive: Bool = true
+    private let weekdayOptions: [WeekdayOption] = [
+        WeekdayOption(id: 2, label: "Mon"),
+        WeekdayOption(id: 3, label: "Tue"),
+        WeekdayOption(id: 4, label: "Wed"),
+        WeekdayOption(id: 5, label: "Thu"),
+        WeekdayOption(id: 6, label: "Fri"),
+        WeekdayOption(id: 7, label: "Sat"),
+        WeekdayOption(id: 1, label: "Sun")
+    ]
 
     public init(settings: AppSettings) {
         self.settings = settings
@@ -83,7 +92,6 @@ public struct PreferencesView: View {
         }
     }
 
-    // MARK: - General Tab
 
     private var generalTab: some View {
         Form {
@@ -158,7 +166,6 @@ public struct PreferencesView: View {
         .scrollContentBackground(.hidden)
     }
 
-    // MARK: - Appearance Tab
 
     private var appearanceTab: some View {
         Form {
@@ -186,7 +193,6 @@ public struct PreferencesView: View {
         .scrollContentBackground(.hidden)
     }
 
-    // MARK: - Profiles Tab
 
     @State private var showingAddProfile = false
     @State private var newProfileBundleID = ""
@@ -318,7 +324,6 @@ public struct PreferencesView: View {
         }
     }
 
-    // MARK: - Focus Tab (Pomodoro + Schedule)
 
     private var focusTab: some View {
         Form {
@@ -348,6 +353,11 @@ public struct PreferencesView: View {
                     Text("When enabled, overlay is hidden during break periods.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
+
+                    Toggle("Show Pomodoro timer under menu bar", isOn: $settings.pomodoroMenuBarTimerEnabled)
+                    Text("Displays a hover-reveal timer panel centered below the menu bar.")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
                 }
             }
 
@@ -355,6 +365,30 @@ public struct PreferencesView: View {
                 Toggle("Enable Schedule", isOn: $settings.scheduleEnabled)
 
                 if settings.scheduleEnabled {
+                    Toggle("Use same schedule every day", isOn: $settings.scheduleUseAllDays)
+
+                    if !settings.scheduleUseAllDays {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Active Days")
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                                ForEach(weekdayOptions) { day in
+                                    let isSelected = settings.scheduleDays.contains(day.id)
+                                    Button(action: { toggleScheduleDay(day.id) }) {
+                                        Text(day.label)
+                                            .font(.caption.weight(.medium))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 6)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 6)
+                                                    .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.08))
+                                            )
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+
                     HStack {
                         Text("Start")
                         Picker("", selection: $settings.scheduleStartHour) {
@@ -394,7 +428,7 @@ public struct PreferencesView: View {
                         .frame(width: 70)
                     }
 
-                    Text("Dimming will only be active between these times.")
+                    Text("Dimming will only be active on selected days and between these times.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
@@ -404,7 +438,6 @@ public struct PreferencesView: View {
         .scrollContentBackground(.hidden)
     }
 
-    // MARK: - Shortcuts Tab
 
     @State private var recordingShortcut: ShortcutAction? = nil
 
@@ -457,7 +490,6 @@ public struct PreferencesView: View {
         }
     }
 
-    // MARK: - Advanced Tab
 
     private var advancedTab: some View {
         Form {
@@ -493,13 +525,15 @@ public struct PreferencesView: View {
                 Toggle("Dim After Inactivity", isOn: $settings.idleDimEnabled)
 
                 if settings.idleDimEnabled {
-                    HStack {
-                        Text("Timeout")
-                        Slider(value: $settings.idleTimeout, in: 30...600, step: 30)
-                        Text(idleTimeoutLabel)
-                            .monospacedDigit()
-                            .foregroundStyle(.secondary)
-                            .frame(width: 50, alignment: .trailing)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Picker("Timeout", selection: $settings.idleTimeout) {
+                            ForEach(AppSettings.idleTimeoutSteps, id: \.self) { step in
+                                Text(idleTimeoutLabel(for: step)).tag(step)
+                            }
+                        }
+                        Text("Available steps: 10s, 30s, 60s, 90s, 120s.")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
                     }
 
                     HStack {
@@ -536,7 +570,6 @@ public struct PreferencesView: View {
         .scrollContentBackground(.hidden)
     }
 
-    // MARK: - About Tab
 
     private var aboutTab: some View {
         VStack(spacing: 16) {
@@ -549,10 +582,10 @@ public struct PreferencesView: View {
             Text("DimmerFlow")
                 .font(.title.bold())
 
-            Text("Version 1.0")
+            Text("Version \(appVersion)")
                 .foregroundStyle(.secondary)
 
-            Text("A lightweight focus dimmer for macOS.\nDims everything except your active window.")
+            Text("DimmerFlow is a professional focus utility for macOS.\nIt highlights the active window and minimizes visual distraction.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
                 .font(.callout)
@@ -560,7 +593,7 @@ public struct PreferencesView: View {
             Divider()
                 .frame(width: 200)
 
-            Link("Okan Doğu BUDAK", destination: URL(string: "https://github.com/okandobudak")!)
+            Text("© 2026 DimmerFlow")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
 
@@ -569,7 +602,6 @@ public struct PreferencesView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Bindings
 
     private var tintBinding: Binding<Color> {
         Binding(
@@ -584,16 +616,30 @@ public struct PreferencesView: View {
         )
     }
 
-    private var idleTimeoutLabel: String {
-        let mins = Int(settings.idleTimeout) / 60
-        let secs = Int(settings.idleTimeout) % 60
+    private func idleTimeoutLabel(for timeout: Double) -> String {
+        let mins = Int(timeout) / 60
+        let secs = Int(timeout) % 60
         if mins > 0 && secs > 0 { return "\(mins)m \(secs)s" }
         if mins > 0 { return "\(mins)m" }
         return "\(secs)s"
     }
+
+    private var appVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1"
+    }
+
+    private func toggleScheduleDay(_ weekday: Int) {
+        var selected = Set(settings.scheduleDays.filter { (1...7).contains($0) })
+        if selected.contains(weekday) {
+            guard selected.count > 1 else { return }
+            selected.remove(weekday)
+        } else {
+            selected.insert(weekday)
+        }
+        settings.scheduleDays = selected.sorted()
+    }
 }
 
-// MARK: - Shortcut Recorder
 
 private struct ShortcutRecorderButton: NSViewRepresentable {
     let shortcut: KeyShortcut
@@ -639,7 +685,6 @@ private struct ShortcutRecorderButton: NSViewRepresentable {
             keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
                 guard let self else { return event }
                 let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-                // Require at least one modifier key
                 guard !mods.isEmpty else {
                     if event.keyCode == 53 { // Escape cancels
                         DispatchQueue.main.async { self.parent.onRecorded(self.parent.shortcut) }
@@ -670,7 +715,6 @@ private struct ShortcutRecorderButton: NSViewRepresentable {
     }
 }
 
-// MARK: - App Profile Row
 
 private struct AppProfileRow: View {
     @Binding var profile: AppProfile
@@ -740,7 +784,6 @@ private struct AppProfileRow: View {
     }
 }
 
-// MARK: - Menu target helper
 
 @MainActor
 private final class AppProfileMenuTarget: NSObject {
@@ -757,4 +800,9 @@ private final class AppProfileMenuTarget: NSObject {
             blurEnabled: settings.blurEnabled
         ))
     }
+}
+
+private struct WeekdayOption: Identifiable {
+    let id: Int
+    let label: String
 }
