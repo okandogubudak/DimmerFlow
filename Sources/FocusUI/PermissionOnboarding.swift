@@ -9,6 +9,8 @@ public struct PermissionOnboardingView: View {
     private let onLater: () -> Void
 
     @State private var missing: [PermissionKind] = []
+    @State private var hadMissingAtLaunch = false
+    @State private var didAutoRestart = false
 
     public init(
         permissionManager: PermissionManager,
@@ -75,6 +77,13 @@ public struct PermissionOnboardingView: View {
             permissionManager.requestMissingPermissions()
             permissionManager.openSystemSettingsForFirstMissing()
             refresh()
+            hadMissingAtLaunch = !missing.isEmpty
+        }
+        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
+            refresh()
+            guard hadMissingAtLaunch, !didAutoRestart, missing.isEmpty else { return }
+            didAutoRestart = true
+            onRestart()
         }
     }
 
@@ -105,7 +114,7 @@ public final class PermissionWindowController {
 
             let created = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 540, height: 240),
-                styleMask: [.titled, .closable],
+                styleMask: [.titled],
                 backing: .buffered,
                 defer: false
             )

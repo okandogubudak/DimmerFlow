@@ -354,8 +354,13 @@ private struct MenuPopoverView: View {
         Binding(
             get: { settings.dimAmount },
             set: { newValue in
+                if newValue > 0.001, !settings.isEnabled {
+                    settings.isEnabled = true
+                }
                 settings.dimAmount = newValue
-                settings.isEnabled = newValue > 0.001
+                if newValue <= 0.001 {
+                    settings.isEnabled = false
+                }
             }
         )
     }

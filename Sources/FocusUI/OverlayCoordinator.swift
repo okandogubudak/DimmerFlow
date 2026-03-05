@@ -39,8 +39,11 @@ public final class OverlayCoordinator {
         )
 
         settings.objectWillChange
-            .throttle(for: .milliseconds(32), scheduler: DispatchQueue.main, latest: true)
-            .sink { [weak self] _ in self?.applyCurrentState() }
+            .sink { [weak self] _ in
+                DispatchQueue.main.async { [weak self] in
+                    self?.applyCurrentState()
+                }
+            }
             .store(in: &cancellables)
 
         startPeriodicTimer()
