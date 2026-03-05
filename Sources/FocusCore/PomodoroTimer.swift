@@ -53,6 +53,7 @@ public final class PomodoroTimer: ObservableObject {
     public var isRunning: Bool { phase != .idle }
 
     public func startFocus() {
+        if phase == .focus, timer != nil { return }
         phase = .focus
         remainingSeconds = Int(settings.pomodoroFocusMinutes * 60)
         onPhaseChange?(.focus)
@@ -60,6 +61,7 @@ public final class PomodoroTimer: ObservableObject {
     }
 
     public func startBreak() {
+        if phase == .breakTime, timer != nil { return }
         phase = .breakTime
         remainingSeconds = Int(settings.pomodoroBreakMinutes * 60)
         onPhaseChange?(.breakTime)
@@ -81,9 +83,9 @@ public final class PomodoroTimer: ObservableObject {
 
     private func startTimer() {
         timer?.invalidate()
-        let createdTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+        let createdTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
-            Task { @MainActor [self] in
+            MainActor.assumeIsolated {
                 self.tick()
             }
         }

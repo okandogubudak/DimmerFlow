@@ -96,8 +96,6 @@ public struct PreferencesView: View {
     private var generalTab: some View {
         Form {
             Section("Dimming") {
-                Toggle("Enable Dimming", isOn: $settings.isEnabled)
-
                 HStack {
                     Text("Intensity")
                     Slider(value: $settings.dimAmount, in: 0...1)
@@ -370,22 +368,19 @@ public struct PreferencesView: View {
                     if !settings.scheduleUseAllDays {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Active Days")
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
+                            HStack(spacing: 6) {
                                 ForEach(weekdayOptions) { day in
                                     let isSelected = settings.scheduleDays.contains(day.id)
                                     Button(action: { toggleScheduleDay(day.id) }) {
                                         Text(day.label)
-                                            .font(.caption.weight(.medium))
+                                            .font(.caption.weight(.semibold))
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 6)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 6)
-                                                    .fill(isSelected ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.08))
-                                            )
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(WeekdayChipButtonStyle(isSelected: isSelected))
                                 }
                             }
+                            .frame(maxWidth: .infinity)
                         }
                     }
 
@@ -805,4 +800,28 @@ private final class AppProfileMenuTarget: NSObject {
 private struct WeekdayOption: Identifiable {
     let id: Int
     let label: String
+}
+
+private struct WeekdayChipButtonStyle: ButtonStyle {
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(isSelected ? Color.white : Color.primary)
+            .padding(.horizontal, 4)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(isSelected ? Color.accentColor : Color.secondary.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .stroke(
+                        isSelected ? Color.accentColor.opacity(0.95) : Color.secondary.opacity(0.35),
+                        lineWidth: 0.8
+                    )
+            )
+            .opacity(configuration.isPressed ? 0.86 : 1)
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
+    }
 }
