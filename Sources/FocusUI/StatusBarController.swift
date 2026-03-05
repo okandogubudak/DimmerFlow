@@ -8,6 +8,7 @@ public final class StatusBarController: NSObject {
     private let settings: AppSettings
     private let statusItem: NSStatusItem
     private let pomodoroMenuBarTimerController: PomodoroMenuBarTimerController
+    private lazy var fallbackPomodoroTimer = PomodoroTimer(settings: settings)
     private var popoverPanel: NSPanel?
     private var preferencesWindow: NSWindow?
     private var eventMonitor: Any?
@@ -103,7 +104,7 @@ public final class StatusBarController: NSObject {
 
         let content = MenuPopoverView(
             settings: settings,
-            pomodoroTimer: pomodoroTimer,
+            pomodoroTimer: pomodoroTimer ?? fallbackPomodoroTimer,
             onSettings: { [weak self] in
                 self?.closePopover()
                 self?.openPreferences()
@@ -209,9 +210,9 @@ private struct MenuPopoverView: View {
     let onSettings: () -> Void
     let onQuit: () -> Void
 
-    init(settings: AppSettings, pomodoroTimer: PomodoroTimer?, onSettings: @escaping () -> Void, onQuit: @escaping () -> Void) {
+    init(settings: AppSettings, pomodoroTimer: PomodoroTimer, onSettings: @escaping () -> Void, onQuit: @escaping () -> Void) {
         self.settings = settings
-        self.pomodoroTimer = pomodoroTimer ?? PomodoroTimer(settings: settings)
+        self.pomodoroTimer = pomodoroTimer
         self.onSettings = onSettings
         self.onQuit = onQuit
     }

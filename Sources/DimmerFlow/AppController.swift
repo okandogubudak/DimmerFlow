@@ -25,6 +25,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         statusBarController = StatusBarController(settings: settings)
+        ensurePomodoroTimer()
 
         let shouldShowOnboarding = permissionManager.shouldShowOnboardingOnLaunch()
         if shouldShowOnboarding {
@@ -38,6 +39,21 @@ final class AppController: NSObject, NSApplicationDelegate {
         applyLaunchArguments()
         observeLaunchAtLogin()
         observeShortcutChanges()
+    }
+
+    private func ensurePomodoroTimer() {
+        if pomodoroTimer != nil { return }
+
+        let pomodoro = PomodoroTimer(settings: settings)
+        pomodoro.onPhaseChange = { [weak self] phase in
+            guard let self else { return }
+            self.overlayCoordinator?.setPomodoroPhase(phase)
+            if phase == .focus && !self.settings.isEnabled {
+                self.settings.isEnabled = true
+            }
+        }
+        pomodoroTimer = pomodoro
+        statusBarController?.pomodoroTimer = pomodoro
     }
 
     private func showPermissionOnboardingAndStart() {
@@ -59,6 +75,8 @@ final class AppController: NSObject, NSApplicationDelegate {
     }
 
     private func startCoreServicesIfPossible() {
+        ensurePomodoroTimer()
+
         if !permissionManager.missingPermissions().isEmpty {
             permissionManager.requestMissingPermissions()
             permissionManager.openSystemSettingsForFirstMissing()
@@ -79,17 +97,6 @@ final class AppController: NSObject, NSApplicationDelegate {
         }
         monitor.start()
         focusMonitor = monitor
-
-        let pomodoro = PomodoroTimer(settings: settings)
-        pomodoro.onPhaseChange = { [weak self] phase in
-            guard let self else { return }
-            self.overlayCoordinator?.setPomodoroPhase(phase)
-            if phase == .focus && !self.settings.isEnabled {
-                self.settings.isEnabled = true
-            }
-        }
-        pomodoroTimer = pomodoro
-        statusBarController?.pomodoroTimer = pomodoro
 
         registerGlobalHotkeys()
         startIdleMonitor()
