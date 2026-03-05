@@ -48,10 +48,6 @@ final class AppController: NSObject, NSApplicationDelegate {
             onRestart: { [weak self] in
                 guard let self else { return }
                 self.permissionWindowController?.close()
-                if !self.permissionManager.missingPermissions().isEmpty {
-                    self.permissionManager.openSystemSettingsForFirstMissing()
-                    return
-                }
                 self.restartApplication()
             },
             onLater: { [weak self] in
