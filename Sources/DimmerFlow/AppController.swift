@@ -146,7 +146,10 @@ final class AppController: NSObject, NSApplicationDelegate {
 
     private func startIdleMonitor() {
         idleTimer = Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.checkIdleState() }
+            guard let self else { return }
+            Task { @MainActor [self] in
+                self.checkIdleState()
+            }
         }
     }
 
