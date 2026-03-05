@@ -56,8 +56,9 @@ public final class FocusMonitor {
     private func scheduleTimer() {
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
-            Task { @MainActor in
-                self?.pollFocusedWindow()
+            guard let self else { return }
+            Task { @MainActor [self] in
+                self.pollFocusedWindow()
             }
         }
         if let timer {
