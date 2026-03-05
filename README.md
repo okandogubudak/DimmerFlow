@@ -19,7 +19,6 @@ DimmerFlow is a focused menu bar utility for macOS that keeps attention on the a
 
 ### GIF Demos
 
-![Demo 1](assets/screenshots/v1.1-demo-01.gif)
 ![Demo 2](assets/screenshots/v1.1-demo-02.gif)
 ![Demo 3](assets/screenshots/v1.1-demo-03.gif)
 
