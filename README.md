@@ -10,6 +10,18 @@ DimmerFlow is a focused menu bar utility for macOS that keeps attention on the a
 - Centered preferences window behavior
 - Updated keyboard shortcuts and control flow tuning
 
+## Preview
+
+### Screenshots
+
+![Popover UI](assets/screenshots/v1.1-ss-01.png)
+![Preferences Window](assets/screenshots/v1.1-ss-02.png)
+
+### GIF Demos
+
+![Demo 2](assets/screenshots/v1.1-demo-02.gif)
+![Demo 3](assets/screenshots/v1.1-demo-03.gif)
+
 ## Core Features
 
 - Real-time active-window dimming
