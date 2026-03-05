@@ -81,12 +81,15 @@ public final class PomodoroTimer: ObservableObject {
 
     private func startTimer() {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+        let createdTimer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
             guard let self else { return }
             Task { @MainActor [self] in
                 self.tick()
             }
         }
+        createdTimer.tolerance = 0.1
+        RunLoop.main.add(createdTimer, forMode: .common)
+        timer = createdTimer
     }
 
     private func tick() {
