@@ -39,11 +39,11 @@ public final class OverlayCoordinator {
         )
 
         settings.objectWillChange
-            .sink { [weak self] _ in
-                DispatchQueue.main.async { [weak self] in
-                    self?.applyCurrentState()
-                }
-            }
+            .sink { [weak self] _ in self?.applyCurrentState() }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .appSettingsDidChange)
+            .sink { [weak self] _ in self?.applyCurrentState() }
             .store(in: &cancellables)
 
         startPeriodicTimer()
@@ -73,11 +73,8 @@ public final class OverlayCoordinator {
            }) {
             app.activate()
             previousBundleID = nil
-        } else {
-            activeWindowID = nil
-            activeBundleID = nil
-            applyCurrentState()
         }
+        applyCurrentState()
     }
 
     public func setIdleState(_ idle: Bool) {

@@ -1,5 +1,9 @@
 import AppKit
 import Combine
+
+public extension Notification.Name {
+    static let appSettingsDidChange = Notification.Name("com.dimmerflow.appSettingsDidChange")
+}
 public struct AppProfile: Codable, Identifiable, Equatable {
     public var id: String { bundleID }
     public var bundleID: String
@@ -372,5 +376,6 @@ public final class AppSettings: ObservableObject {
         ud.set(scheduleEndHour, forKey: "scheduleEndHour")
         ud.set(scheduleEndMinute, forKey: "scheduleEndMinute")
         ud.set(searchPanelExclusion, forKey: "searchPanelExclusion")
+        NotificationCenter.default.post(name: .appSettingsDidChange, object: nil)
     }
 }

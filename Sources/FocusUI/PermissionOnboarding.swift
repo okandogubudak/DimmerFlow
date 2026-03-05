@@ -9,9 +9,6 @@ public struct PermissionOnboardingView: View {
     private let onLater: () -> Void
 
     @State private var missing: [PermissionKind] = []
-    @State private var hadMissingAtLaunch = false
-    @State private var didAutoRestart = false
-    @State private var settingsOpenedAt: Date?
 
     public init(
         permissionManager: PermissionManager,
@@ -46,7 +43,6 @@ public struct PermissionOnboardingView: View {
                     refresh()
                 }
                 Button("Open System Settings") {
-                    settingsOpenedAt = Date()
                     permissionManager.openSystemSettingsForFirstMissing()
                 }
                 .disabled(missing.isEmpty)
@@ -57,36 +53,29 @@ public struct PermissionOnboardingView: View {
 
             HStack {
                 Spacer()
-                Button("Later") {
+                Button("Continue") {
                     onLater()
                 }
+                .disabled(!missing.isEmpty)
                 Button("Restart") {
                     onRestart()
                 }
                 .keyboardShortcut(.defaultAction)
+                .disabled(!missing.isEmpty)
             }
         }
         .padding(20)
         .frame(width: 520)
         .onAppear {
             permissionManager.requestMissingPermissions()
-            settingsOpenedAt = Date()
             permissionManager.openSystemSettingsForFirstMissing()
             refresh()
-            hadMissingAtLaunch = !missing.isEmpty
         }
-        .onReceive(Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()) { _ in
+        .onReceive(Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()) { _ in
             refresh()
-            guard hadMissingAtLaunch, !didAutoRestart, missing.isEmpty else { return }
-            didAutoRestart = true
-            onRestart()
         }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refresh()
-            guard hadMissingAtLaunch, !didAutoRestart else { return }
-            guard let settingsOpenedAt, Date().timeIntervalSince(settingsOpenedAt) > 1.0 else { return }
-            didAutoRestart = true
-            onRestart()
         }
     }
 
